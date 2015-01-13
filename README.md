@@ -21,6 +21,11 @@ and Result:
 
     {"AT61 1904 3002 3457 3201",true}
 
+License
+-------
+
+Distributed under the terms of ISC License.
+
 Credits
 -------
 
