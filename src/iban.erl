@@ -10,15 +10,7 @@ main([]) ->
     timer:sleep(infinity).
 
 is_valid(Iban) -> I = spaceParser(Iban), ibanParser(I).
-
-spaceParser(Iban) -> 
-      X = string:str(Iban, " "),
-      if 
-        X /= 0 -> Y = string:substr(Iban, 1, X -1),
-            Z = string:substr(Iban, X + 1),
-            spaceParser(Y++Z);
-        true -> Iban
-      end.
+spaceParser(Iban) -> string:join(string:tokens(Iban," "),"").
 
 ibanParser(Iban) ->  
       if Iban == [] -> false;
@@ -26,15 +18,37 @@ ibanParser(Iban) ->
           X = {string:substr(Iban, 1, 2)}, 
           Y = {string:substr(Iban, 3, 2)}, 
           Z = {string:substr(Iban, 5)}, 
-          newIban(X, Y, Z)
+          checkIban(X, Y, Z)
       end.
 
-newIban({X}, {Y}, {Z}) -> 
+newIban(Country,BankNumber) ->
+    CountryCode = letterToNumber(Country, []),
+    BankNumberCode = letterToNumber(BankNumber, []),
+    Res = string:join([Country,checksum(BankNumber,CountryCode),BankNumber],""),
+    io:format("IBAN GENERATED: ~p~n",[Res]),
+    Res.
+
+twosection(Sum) when Sum < 100 andalso Sum >= 0 -> lists:flatten(io_lib:format("~2..0B",[Sum])).
+checksum(BankNumber,Country) ->
+      Check = string:join([BankNumber,Country],""),
+      Code = lists:foldl(fun(X,Acc) ->
+            Padding = twosection(X),
+            {IntNum, _} = string:to_integer(Check++Padding),
+%            io:format("IntNum: ~p ~p~n",[IntNum,IntNum rem 97]),
+            case IntNum rem 97 of 1 -> Padding; _ -> Acc end
+      end,"__",lists:seq(0,99)).
+
+checkIban({X}, {Y}, {Z}) ->
       NumX = letterToNumber(X, []),
+%      io:format("NumX: ~p~n",[NumX]),
       NumZ = letterToNumber(Z, []),
+%      io:format("NumZ: ~p~n",[NumZ]),
       LastNum = NumZ ++ NumX ++ Y,
+%      io:format("LastNum: ~p~n",[NumZ ++ NumX ++ "00"]),
       {{IntNum, _}} = {string:to_integer(LastNum)},
+%      io:format("IntNum: ~p~n",[IntNum]),
       D = IntNum rem 97,
+%      io:format("D: ~p~n",[D]),
       if 
         D == 1 -> true;
         true -> false
